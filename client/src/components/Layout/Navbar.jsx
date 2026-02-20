@@ -76,15 +76,13 @@ const Navbar = () => {
           scrolled ? 'py-1' : 'py-2'
         }`}>
           <div className="animate-marquee inline-block">
-            <span className="mx-4 font-bold tracking-widest text-sm md:text-base">🚀 500 TL VE ÜZERİ KARGO BEDAVA</span>
-            <span className="mx-4 text-gray-500">•</span>
             <span className="mx-4 font-bold tracking-widest text-sm md:text-base">🔥 YENİ SEZON ÜRÜNLERİ STOKLARDA</span>
             <span className="mx-4 text-gray-500">•</span>
             <span className="mx-4 font-bold tracking-widest text-sm md:text-base">👟 2. ÇİFTTE DEV İNDİRİM FIRSATI</span>
             <span className="mx-4 text-gray-500">•</span>
-            <span className="mx-4 font-bold tracking-widest text-sm md:text-base">🚀 500 TL VE ÜZERİ KARGO BEDAVA</span>
-            <span className="mx-4 text-gray-500">•</span>
             <span className="mx-4 font-bold tracking-widest text-sm md:text-base">🔥 YENİ SEZON ÜRÜNLERİ STOKLARDA</span>
+            <span className="mx-4 text-gray-500">•</span>
+            <span className="mx-4 font-bold tracking-widest text-sm md:text-base">👟 2. ÇİFTTE DEV İNDİRİM FIRSATI</span>
           </div>
         </div>
 

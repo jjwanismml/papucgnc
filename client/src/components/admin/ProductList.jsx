@@ -19,6 +19,8 @@ const brandLogos = {
   'New Balance': '/new-balance.webp',
   'new balance': '/new-balance.webp',
   'NewBalance': '/new-balance.webp',
+  'Converse': '/converse.webp',
+  'converse': '/converse.webp',
 };
 
 const getBrandLogo = (brandName) => {

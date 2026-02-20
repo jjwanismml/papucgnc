@@ -7,9 +7,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // MongoDB URI kontrolü
 if (!process.env.MONGODB_URI) {
-  console.error('❌ HATA: MONGODB_URI tanımlı değil!');
-  console.error('📁 Lokal: .env dosyasını kontrol edin');
-  console.error('☁️  Railway: Environment Variables bölümünden MONGODB_URI ekleyin');
+  console.error('HATA: MONGODB_URI tanımlı değil!');
   process.exit(1);
 }
 
@@ -19,43 +17,29 @@ const app = express();
 // MongoDB Connection
 connectDB();
 
-// Manuel CORS middleware - HER isteğe header ekle
+// CORS - tüm originlere izin ver
+app.use(cors());
+
+// Manuel CORS header - her response'a ekle
 app.use((req, res, next) => {
-  const allowedOrigins = ['https://papucgnc.com', 'https://www.papucgnc.com', 'http://localhost:3000', 'http://localhost:5173'];
-  const origin = req.headers.origin;
-  
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    // Bilinmeyen origin'ler için de izin ver (geliştirme kolaylığı)
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  
-  // Preflight OPTIONS isteği ise hemen 204 döndür
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   if (req.method === 'OPTIONS') {
-    return res.status(204).end();
+    return res.sendStatus(200);
   }
-  
   next();
 });
-
-// CORS paketi de ekle (yedek)
-app.use(cors());
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Statik dosya sunumu - yüklenen resimler
+// Statik dosya sunumu
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes
+// Health check
 app.get('/', (req, res) => {
-  res.json({ message: 'Shoe E-commerce API çalışıyor!' });
+  res.json({ message: 'API çalışıyor', status: 'ok' });
 });
 
 // API Routes
@@ -69,4 +53,5 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server ${PORT} portunda çalışıyor`);
+  console.log(`NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
 });
