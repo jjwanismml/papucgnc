@@ -11,8 +11,8 @@ import LazyImage from '../components/LazyImage';
 
 // 1-2. Marquee + Navbar artık Navbar bileşeninde birleşik (Shared component)
 
-// Product Card Component (Store için özel)
-const ProductCard = ({ product, onCartAdded }) => {
+// Product Card Component (Store için özel - her renk için ayrı kart)
+const ProductCard = ({ product, colorIndex = 0, onCartAdded }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showSizeSelector, setShowSizeSelector] = useState(false);
   const [selectedCardSize, setSelectedCardSize] = useState(null);
@@ -20,18 +20,18 @@ const ProductCard = ({ product, onCartAdded }) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
-  // İlk rengin görsellerini al
-  const firstColor = product.colors?.[0];
-  const images = firstColor?.images || [];
-  const hoverVideo = firstColor?.hoverVideo || '';
+  // Belirtilen rengin görsellerini al
+  const currentColor = product.colors?.[colorIndex];
+  const images = currentColor?.images || [];
+  const hoverVideo = currentColor?.hoverVideo || '';
   const mainImage = getImageUrl(images[0]) || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=800&auto=format&fit=crop';
   const hoverImage = getImageUrl(images[1] || images[0]) || mainImage;
 
-  // Renk hex kodlarını al
+  // Tüm renk hex kodlarını al (renk noktaları için)
   const colorHexes = product.colors?.map(color => color.hexCode || '#ffffff') || ['#ffffff'];
 
-  // Mevcut numaraları al
-  const availableSizes = firstColor?.sizes?.filter(s => s.stock > 0).map(s => s.size) || [];
+  // Bu renk için mevcut numaraları al
+  const availableSizes = currentColor?.sizes?.filter(s => s.stock > 0).map(s => s.size) || [];
 
   // Fiyat hesaplama - originalPrice ve price arasında hangisi büyükse o çizili gösterilir
   const hasDiscount = product.originalPrice && product.originalPrice > 0 && product.originalPrice !== product.price;
@@ -53,8 +53,8 @@ const ProductCard = ({ product, onCartAdded }) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (!firstColor || !firstColor.sizes || firstColor.sizes.length === 0) {
-      navigate(`/product/${product._id}`);
+    if (!currentColor || !currentColor.sizes || currentColor.sizes.length === 0) {
+      navigate(`/product/${product._id}?color=${colorIndex}`);
       return;
     }
 
@@ -69,7 +69,7 @@ const ProductCard = ({ product, onCartAdded }) => {
     addToCart({
       productId: product._id,
       product: product,
-      selectedColor: firstColor.colorName || colorHexes[0],
+      selectedColor: currentColor.colorName || colorHexes[colorIndex] || colorHexes[0],
       selectedSize: selectedCardSize,
       quantity: 1,
       price: displayPrice,
@@ -80,7 +80,7 @@ const ProductCard = ({ product, onCartAdded }) => {
     onCartAdded?.({
       name: product.name,
       image: mainImage,
-      selectedColor: firstColor.colorName || colorHexes[0],
+      selectedColor: currentColor.colorName || colorHexes[colorIndex] || colorHexes[0],
       selectedSize: selectedCardSize,
       price: displayPrice,
     });
@@ -105,7 +105,7 @@ const ProductCard = ({ product, onCartAdded }) => {
 
   const handleCardClick = () => {
     if (!showSizeSelector) {
-      navigate(`/product/${product._id}`);
+      navigate(`/product/${product._id}?color=${colorIndex}`);
     }
   };
 
@@ -123,6 +123,13 @@ const ProductCard = ({ product, onCartAdded }) => {
         </div>
       )}
 
+      {/* Renk ismi badge */}
+      {currentColor?.colorName && (
+        <div className="absolute top-2 right-2 z-20 text-[9px] md:text-[10px] font-bold px-2 py-1 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-sm">
+          {currentColor.colorName}
+        </div>
+      )}
+
       {/* Image Container */}
       <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 rounded-sm mb-3">
         {isHovered && hoverVideo ? (
@@ -137,7 +144,7 @@ const ProductCard = ({ product, onCartAdded }) => {
         ) : (
           <img 
             src={isHovered ? hoverImage : mainImage} 
-            alt={`${product.name} - ${product.brand?.name || ''} Ayakkabı`} 
+            alt={`${product.name} - ${currentColor?.colorName || ''} - ${product.brand?.name || ''} Ayakkabı`} 
             loading="lazy"
             decoding="async"
             className={`w-full h-full object-cover transition-transform duration-700 ease-in-out ${isHovered ? 'scale-110' : 'scale-100'}`}
@@ -211,10 +218,10 @@ const ProductCard = ({ product, onCartAdded }) => {
           )}
         </div>
 
-        {/* Color Dots */}
+        {/* Color Dots - aktif rengi vurgula */}
         <div className="flex gap-1 pt-1">
           {colorHexes.slice(0, 5).map((color, i) => (
-             <div key={i} className="w-3 h-3 rounded-full border border-gray-300" style={{backgroundColor: color}}></div>
+             <div key={i} className={`w-3 h-3 rounded-full border ${i === colorIndex ? 'border-black ring-1 ring-black ring-offset-1' : 'border-gray-300'}`} style={{backgroundColor: color}}></div>
           ))}
         </div>
       </div>
@@ -388,6 +395,17 @@ const Store = () => {
 
   const filteredProducts = products;
 
+  // Her renk için ayrı kart oluştur - ürünleri renklere göre genişlet
+  const expandedProducts = filteredProducts.flatMap(product => {
+    const colors = product.colors || [];
+    if (colors.length <= 1) {
+      // Tek renk veya renk yoksa normal göster
+      return [{ product, colorIndex: 0 }];
+    }
+    // Birden fazla renk varsa her renk için ayrı kart
+    return colors.map((_, colorIndex) => ({ product, colorIndex }));
+  });
+
   return (
     <div className="min-h-screen bg-white">
       <SEO
@@ -537,7 +555,7 @@ const Store = () => {
         <main className="flex-1">
             {/* Toolbar */}
             <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
-                <span className="font-bold text-gray-500 text-sm">{filteredProducts.length} Ürün Listelendi</span>
+                <span className="font-bold text-gray-500 text-sm">{expandedProducts.length} Ürün Listelendi</span>
                 <div className="hidden md:flex items-center gap-2 cursor-pointer group relative">
                     <select 
                       value={sortBy}
@@ -555,11 +573,11 @@ const Store = () => {
 
             {loading ? (
               <div className="text-center py-12 text-gray-500">Yükleniyor...</div>
-            ) : filteredProducts.length > 0 ? (
+            ) : expandedProducts.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-10">
-                  {filteredProducts.map(product => (
-                    <ProductCard key={product._id} product={product} onCartAdded={handleCartAdded} />
+                  {expandedProducts.map(({ product, colorIndex }) => (
+                    <ProductCard key={`${product._id}-${colorIndex}`} product={product} colorIndex={colorIndex} onCartAdded={handleCartAdded} />
                   ))}
                 </div>
               </>
@@ -688,7 +706,7 @@ const Store = () => {
                     onClick={() => setMobileFilterOpen(false)} 
                     className="w-full bg-black text-white py-4 font-black tracking-widest sticky bottom-4"
                   >
-                    UYGULA ({filteredProducts.length})
+                    UYGULA ({expandedProducts.length})
                   </button>
               </div>
           </div>

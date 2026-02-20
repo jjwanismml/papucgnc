@@ -76,8 +76,8 @@ const Hero = () => {
   );
 };
 
-// 4. Product Card Component (Hover Video Logic + Numara Seçimi Zorunlu)
-const ProductCard = ({ product, onCartAdded }) => {
+// 4. Product Card Component (Hover Video Logic + Numara Seçimi Zorunlu - Her renk ayrı kart)
+const ProductCard = ({ product, colorIndex = 0, onCartAdded }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showSizeSelector, setShowSizeSelector] = useState(false);
   const [selectedCardSize, setSelectedCardSize] = useState(null);
@@ -85,20 +85,20 @@ const ProductCard = ({ product, onCartAdded }) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
-  // İlk rengin görsellerini al
-  const firstColor = product.colors?.[0];
-  const images = firstColor?.images || [];
-  const hoverVideo = firstColor?.hoverVideo || '';
+  // Belirtilen rengin görsellerini al
+  const currentColor = product.colors?.[colorIndex];
+  const images = currentColor?.images || [];
+  const hoverVideo = currentColor?.hoverVideo || '';
   const mainImage = getImageUrl(images[0]) || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=800&auto=format&fit=crop';
   const hoverImage = getImageUrl(images[1] || images[0]) || mainImage;
 
-  // Renk hex kodlarını al
+  // Tüm renk hex kodlarını al
   const colorHexes = product.colors?.map(color => color.hexCode || '#ffffff') || ['#ffffff'];
 
-  // Mevcut numaraları al
-  const availableSizes = firstColor?.sizes?.filter(s => s.stock > 0).map(s => s.size) || [];
+  // Bu renk için mevcut numaraları al
+  const availableSizes = currentColor?.sizes?.filter(s => s.stock > 0).map(s => s.size) || [];
 
-  // Fiyat hesaplama - originalPrice ve price arasında hangisi büyükse o çizili gösterilir
+  // Fiyat hesaplama
   const hasDiscount = product.originalPrice && product.originalPrice > 0 && product.originalPrice !== product.price;
   const displayPrice = hasDiscount ? Math.min(product.price, product.originalPrice) : product.price;
   const strikethroughPrice = hasDiscount ? Math.max(product.price, product.originalPrice) : null;
@@ -109,7 +109,7 @@ const ProductCard = ({ product, onCartAdded }) => {
       return product.category;
     }
     if (product.isFeatured) {
-return 'ÇOK SATAN';
+      return 'ÇOK SATAN';
     }
     return null;
   };
@@ -118,8 +118,8 @@ return 'ÇOK SATAN';
     e.preventDefault();
     e.stopPropagation();
     
-    if (!firstColor || !firstColor.sizes || firstColor.sizes.length === 0) {
-      navigate(`/product/${product._id}`);
+    if (!currentColor || !currentColor.sizes || currentColor.sizes.length === 0) {
+      navigate(`/product/${product._id}?color=${colorIndex}`);
       return;
     }
 
@@ -134,7 +134,7 @@ return 'ÇOK SATAN';
     addToCart({
       productId: product._id,
       product: product,
-      selectedColor: firstColor.colorName || colorHexes[0],
+      selectedColor: currentColor.colorName || colorHexes[colorIndex] || colorHexes[0],
       selectedSize: selectedCardSize,
       quantity: 1,
       price: displayPrice,
@@ -145,7 +145,7 @@ return 'ÇOK SATAN';
     onCartAdded?.({
       name: product.name,
       image: mainImage,
-      selectedColor: firstColor.colorName || colorHexes[0],
+      selectedColor: currentColor.colorName || colorHexes[colorIndex] || colorHexes[0],
       selectedSize: selectedCardSize,
       price: displayPrice,
     });
@@ -170,7 +170,7 @@ return 'ÇOK SATAN';
 
   const handleCardClick = () => {
     if (!showSizeSelector) {
-      navigate(`/product/${product._id}`);
+      navigate(`/product/${product._id}?color=${colorIndex}`);
     }
   };
 
@@ -188,6 +188,13 @@ return 'ÇOK SATAN';
         </div>
       )}
 
+      {/* Renk ismi badge */}
+      {currentColor?.colorName && (
+        <div className="absolute top-2 right-2 z-20 text-[9px] md:text-[10px] font-bold px-2 py-1 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-sm">
+          {currentColor.colorName}
+        </div>
+      )}
+
       {/* Image Container */}
       <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 rounded-sm mb-3">
         {isHovered && hoverVideo ? (
@@ -202,7 +209,7 @@ return 'ÇOK SATAN';
         ) : (
           <img 
             src={isHovered ? hoverImage : mainImage} 
-            alt={`${product.name} - ${product.brand?.name || ''} Ayakkabı`} 
+            alt={`${product.name} - ${currentColor?.colorName || ''} - ${product.brand?.name || ''} Ayakkabı`} 
             loading="lazy"
             decoding="async"
             className={`w-full h-full object-cover transition-transform duration-700 ease-in-out ${isHovered ? 'scale-110' : 'scale-100'}`}
@@ -276,10 +283,10 @@ return 'ÇOK SATAN';
           )}
         </div>
 
-        {/* Color Dots */}
+        {/* Color Dots - aktif rengi vurgula */}
         <div className="flex gap-1 pt-1">
           {colorHexes.slice(0, 5).map((color, i) => (
-             <div key={i} className="w-3 h-3 rounded-full border border-gray-300" style={{backgroundColor: color}}></div>
+             <div key={i} className={`w-3 h-3 rounded-full border ${i === colorIndex ? 'border-black ring-1 ring-black ring-offset-1' : 'border-gray-300'}`} style={{backgroundColor: color}}></div>
           ))}
         </div>
       </div>
@@ -352,7 +359,15 @@ const Home = () => {
         if (b.featuredAt) return 1;
         return 0;
       });
-      setFeaturedProducts(sorted.slice(0, 8)); // İlk 8 ürünü al
+      // Her renk için ayrı kart oluştur
+      const expanded = sorted.flatMap(product => {
+        const colors = product.colors || [];
+        if (colors.length <= 1) {
+          return [{ product, colorIndex: 0 }];
+        }
+        return colors.map((_, colorIndex) => ({ product, colorIndex }));
+      });
+      setFeaturedProducts(expanded.slice(0, 12)); // İlk 12 kartı al
     } catch (error) {
       console.error('Öne çıkan ürünler yüklenirken hata:', error);
     } finally {
@@ -475,9 +490,9 @@ const Home = () => {
           <div className="text-center py-12 text-gray-500">Yükleniyor...</div>
         ) : featuredProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-            {featuredProducts.map((product, idx) => (
-              <div key={product._id} className={`reveal reveal-delay-${(idx % 4) + 1}`}>
-                <ProductCard product={product} onCartAdded={handleCartAdded} />
+            {featuredProducts.map((item, idx) => (
+              <div key={`${item.product._id}-${item.colorIndex}`} className={`reveal reveal-delay-${(idx % 4) + 1}`}>
+                <ProductCard product={item.product} colorIndex={item.colorIndex} onCartAdded={handleCartAdded} />
               </div>
             ))}
           </div>

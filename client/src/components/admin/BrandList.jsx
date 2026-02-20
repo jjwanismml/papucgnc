@@ -1,4 +1,4 @@
-import { Plus, Package } from 'lucide-react';
+import { Plus, Package, Trash2 } from 'lucide-react';
 
 // Marka isimlerini logo dosyalarına eşle
 const brandLogos = {
@@ -26,7 +26,7 @@ const getBrandLogo = (brandName) => {
   return brandLogos[brandName] || brandLogos[brandName?.toLowerCase()] || null;
 };
 
-const BrandList = ({ brands, onAddProduct }) => {
+const BrandList = ({ brands, onAddProduct, onDeleteBrand }) => {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
       {brands.map((brand) => {
@@ -63,14 +63,21 @@ const BrandList = ({ brands, onAddProduct }) => {
               <p className="text-sm font-bold text-gray-800 tracking-tight">{brand.name}</p>
             </div>
             
-            {/* Hover Overlay - Ürün Ekle Butonu */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-end pb-6">
+            {/* Hover Overlay - Ürün Ekle & Marka Sil Butonları */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-end pb-6 gap-2">
               <button
                 onClick={() => onAddProduct(brand)}
                 className="bg-white text-gray-900 px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-gray-100 transition-all font-bold text-sm shadow-lg translate-y-2 group-hover:translate-y-0 duration-300"
               >
                 <Plus className="w-4 h-4" />
                 <span>Ürün Ekle</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDeleteBrand(brand); }}
+                className="bg-red-600 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-red-700 transition-all font-bold text-sm shadow-lg translate-y-2 group-hover:translate-y-0 duration-300"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Markayı Sil</span>
               </button>
             </div>
           </div>

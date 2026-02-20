@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ShoppingCart, ArrowLeft, Tag, Minus, Plus, AlertCircle } from 'lucide-react';
 import api from '../utils/axios';
 import { useCart } from '../contexts/CartContext';
@@ -10,12 +10,15 @@ import SEO from '../components/SEO';
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
   
+  const initialColorIndex = parseInt(searchParams.get('color')) || 0;
+  
   const [product, setProduct] = useState(null);
   const [similarProducts, setSimilarProducts] = useState([]);
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [selectedColorIndex, setSelectedColorIndex] = useState(initialColorIndex);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -26,7 +29,14 @@ const ProductDetail = () => {
   useEffect(() => {
     fetchProduct();
     window.scrollTo(0, 0);
-  }, [id]);
+    // URL'den renk parametresini oku
+    const colorParam = parseInt(searchParams.get('color'));
+    if (!isNaN(colorParam) && colorParam >= 0) {
+      setSelectedColorIndex(colorParam);
+    } else {
+      setSelectedColorIndex(0);
+    }
+  }, [id, searchParams]);
 
   const fetchProduct = async () => {
     try {

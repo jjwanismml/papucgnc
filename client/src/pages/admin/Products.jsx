@@ -20,10 +20,15 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Silme onay state'leri
+  // Ürün silme onay state'leri
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Marka silme onay state'leri
+  const [brandDeleteTarget, setBrandDeleteTarget] = useState(null);
+  const [isBrandDeleteModalOpen, setIsBrandDeleteModalOpen] = useState(false);
+  const [isBrandDeleting, setIsBrandDeleting] = useState(false);
 
   useEffect(() => {
     fetchBrands();
@@ -113,6 +118,33 @@ const Products = () => {
     fetchBrands();
   };
 
+  // Marka Silme
+  const handleDeleteBrand = (brand) => {
+    setBrandDeleteTarget(brand);
+    setIsBrandDeleteModalOpen(true);
+  };
+
+  const confirmBrandDelete = async () => {
+    if (!brandDeleteTarget) return;
+    try {
+      setIsBrandDeleting(true);
+      await api.delete(`/brands/${brandDeleteTarget._id}`);
+      setIsBrandDeleteModalOpen(false);
+      setBrandDeleteTarget(null);
+      fetchBrands();
+      fetchProducts();
+    } catch (error) {
+      console.error('Marka silme hatası:', error);
+    } finally {
+      setIsBrandDeleting(false);
+    }
+  };
+
+  const cancelBrandDelete = () => {
+    setIsBrandDeleteModalOpen(false);
+    setBrandDeleteTarget(null);
+  };
+
   // Ürün araması
   const filteredProducts = searchTerm
     ? products.filter(p =>
@@ -168,7 +200,7 @@ const Products = () => {
             </button>
           </div>
         ) : (
-          <BrandList brands={brands} onAddProduct={handleAddProduct} />
+          <BrandList brands={brands} onAddProduct={handleAddProduct} onDeleteBrand={handleDeleteBrand} />
         )}
       </div>
 
@@ -304,6 +336,73 @@ const Products = () => {
                   </>
                 ) : (
                   'Evet, Sil'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Marka Silme Onay Modalı */}
+      {isBrandDeleteModalOpen && brandDeleteTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <style>{`
+            @keyframes brandDeleteModalIn {
+              from { opacity: 0; transform: scale(0.95) translateY(10px); }
+              to { opacity: 1; transform: scale(1) translateY(0); }
+            }
+          `}</style>
+          <div 
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl shadow-black/20 overflow-hidden"
+            style={{ animation: 'brandDeleteModalIn 0.3s ease-out' }}
+          >
+            {/* Header */}
+            <div className="p-6 pb-0">
+              <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-7 h-7 text-red-600" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 text-center">Markayı Sil</h3>
+              <p className="text-sm text-gray-500 text-center mt-2 leading-relaxed">
+                <span className="font-bold text-gray-800">"{brandDeleteTarget.name}"</span> markasını silmek istediğinize emin misiniz?
+              </p>
+              <p className="text-xs text-red-500 text-center mt-2 font-semibold bg-red-50 rounded-lg py-2 px-3">
+                ⚠️ Bu markaya ait tüm ürünler de kalıcı olarak silinecektir. Bu işlem geri alınamaz!
+              </p>
+            </div>
+
+            {/* Marka Önizleme */}
+            <div className="mx-6 mt-4 p-3 bg-gray-50 rounded-xl flex items-center gap-3">
+              <div className="w-14 h-14 rounded-lg bg-white border border-gray-200 flex items-center justify-center p-2">
+                <Package className="w-6 h-6 text-gray-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-gray-900 text-sm truncate">{brandDeleteTarget.name}</p>
+                <p className="text-xs text-gray-500">
+                  {products.filter(p => p.brand?._id === brandDeleteTarget._id || p.brand === brandDeleteTarget._id).length} ürün silinecek
+                </p>
+              </div>
+            </div>
+
+            {/* Butonlar */}
+            <div className="p-6 flex gap-3">
+              <button
+                onClick={cancelBrandDelete}
+                disabled={isBrandDeleting}
+                className="flex-1 px-5 py-3 border-2 border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 disabled:opacity-50 font-semibold text-sm transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                onClick={confirmBrandDelete}
+                disabled={isBrandDeleting}
+                className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-red-600/20"
+              >
+                {isBrandDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Siliniyor...
+                  </>
+                ) : (
+                  'Evet, Markayı Sil'
                 )}
               </button>
             </div>

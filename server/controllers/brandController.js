@@ -1,4 +1,5 @@
 const Brand = require('../models/Brand');
+const Product = require('../models/Product');
 
 // GET /api/brands - Tüm markaları getir
 exports.getBrands = async (req, res) => {
@@ -50,6 +51,36 @@ exports.createBrand = async (req, res) => {
 
     res.status(500).json({ 
       error: 'Marka eklenirken bir hata oluştu',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// DELETE /api/brands/:id - Marka sil (ve markaya ait tüm ürünleri de sil)
+exports.deleteBrand = async (req, res) => {
+  try {
+    const brand = await Brand.findById(req.params.id);
+    if (!brand) {
+      return res.status(404).json({ error: 'Marka bulunamadı' });
+    }
+
+    // Markaya ait ürün sayısını bul
+    const productCount = await Product.countDocuments({ brand: brand._id });
+
+    // Markaya ait tüm ürünleri sil
+    await Product.deleteMany({ brand: brand._id });
+
+    // Markayı sil
+    await Brand.findByIdAndDelete(req.params.id);
+
+    res.json({
+      message: 'Marka ve ilişkili ürünler başarıyla silindi',
+      deletedProducts: productCount
+    });
+  } catch (error) {
+    console.error('Marka silme hatası:', error);
+    res.status(500).json({
+      error: 'Marka silinirken bir hata oluştu',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
