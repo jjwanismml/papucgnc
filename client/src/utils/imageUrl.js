@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://papucgnc-production.up.railway.app';
+const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://papucgnc-production-01f6.up.railway.app';
 
 /**
  * Resim URL'sini tam URL'ye dönüştürür.

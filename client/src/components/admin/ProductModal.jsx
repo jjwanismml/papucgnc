@@ -3,7 +3,7 @@ import { X, Plus, Trash2, CheckCircle, AlertCircle, Package, Image, Palette, Fil
 import api from '../../utils/axios';
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://papucgnc-production.up.railway.app';
+const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://papucgnc-production-01f6.up.railway.app';
 
 const ProductModal = ({ brand, onClose, editProduct, brands }) => {
   const isEditMode = !!editProduct;
