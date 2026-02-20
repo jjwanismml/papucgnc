@@ -19,21 +19,34 @@ const app = express();
 // MongoDB Connection
 connectDB();
 
-// Middleware - CORS
-app.use(cors({
-  origin: ['https://papucgnc.com', 'https://www.papucgnc.com', 'http://localhost:3000', 'http://localhost:5173'],
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true
-}));
+// Manuel CORS middleware - HER isteğe header ekle
+app.use((req, res, next) => {
+  const allowedOrigins = ['https://papucgnc.com', 'https://www.papucgnc.com', 'http://localhost:3000', 'http://localhost:5173'];
+  const origin = req.headers.origin;
+  
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    // Bilinmeyen origin'ler için de izin ver (geliştirme kolaylığı)
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  // Preflight OPTIONS isteği ise hemen 204 döndür
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  
+  next();
+});
 
-// Preflight OPTIONS isteklerini her zaman geçir
-app.options('*', cors({
-  origin: ['https://papucgnc.com', 'https://www.papucgnc.com', 'http://localhost:3000', 'http://localhost:5173'],
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true
-}));
+// CORS paketi de ekle (yedek)
+app.use(cors());
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -57,4 +70,3 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server ${PORT} portunda çalışıyor`);
 });
-
