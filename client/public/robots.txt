@@ -1,0 +1,19 @@
+# PAPUÇGNC - Robots.txt
+User-agent: *
+Allow: /
+Allow: /store
+Allow: /product/
+
+# Admin paneli indexleme
+Disallow: /adminjwan/
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order-success
+
+# Sitemap
+Sitemap: https://papucgnc.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
