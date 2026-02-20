@@ -1,6 +1,6 @@
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { CheckCircle, Package, Copy, Check, ArrowRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { CheckCircle, Package, Copy, Check, ArrowRight, Home } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/Layout/Navbar';
 import SEO from '../components/SEO';
 
@@ -11,6 +11,8 @@ const OrderSuccess = () => {
   const [copied, setCopied] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [showConfetti, setShowConfetti] = useState(true);
+  const [countdown, setCountdown] = useState(5);
+  const countdownRef = useRef(null);
 
   useEffect(() => {
     // İçerik animasyonu için gecikme
@@ -22,6 +24,24 @@ const OrderSuccess = () => {
       clearTimeout(confettiTimer);
     };
   }, []);
+
+  // 5 saniye geri sayım ve ana sayfaya yönlendirme
+  useEffect(() => {
+    if (!order) return;
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current);
+          navigate('/', { replace: true });
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [order, navigate]);
 
   if (!order) {
     return (
@@ -173,16 +193,45 @@ const OrderSuccess = () => {
               </p>
             </div>
 
-            {/* Butonlar */}
-            <div className={`flex flex-col sm:flex-row gap-3 transition-all duration-500 delay-[1300ms] ${
+            {/* Geri sayım ve yönlendirme */}
+            <div className={`transition-all duration-500 delay-[1300ms] ${
               showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
-              <Link
-                to="/store"
-                className="flex-1 bg-black text-white py-4 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
-              >
-                Alışverişe Devam Et <ArrowRight className="w-4 h-4" />
-              </Link>
+              {/* Geri sayım göstergesi */}
+              <div className="mb-5">
+                <div className="flex items-center justify-center gap-2 text-gray-500 text-sm mb-3">
+                  <Home className="w-4 h-4" />
+                  <span><strong className="text-gray-800">{countdown}</strong> saniye sonra ana sayfaya yönlendirileceksiniz</span>
+                </div>
+                {/* İlerleme çubuğu */}
+                <div className="w-full max-w-xs mx-auto h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-1000 ease-linear"
+                    style={{ width: `${((5 - countdown) / 5) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Butonlar */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    if (countdownRef.current) clearInterval(countdownRef.current);
+                    navigate('/', { replace: true });
+                  }}
+                  className="flex-1 bg-black text-white py-4 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Home className="w-4 h-4" />
+                  Ana Sayfaya Git
+                </button>
+                <Link
+                  to="/store"
+                  onClick={() => { if (countdownRef.current) clearInterval(countdownRef.current); }}
+                  className="flex-1 border-2 border-gray-200 text-gray-800 py-4 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  Alışverişe Devam Et <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
