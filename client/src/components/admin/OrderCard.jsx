@@ -153,66 +153,85 @@ const OrderCard = ({ order, onStatusUpdate }) => {
       {expanded && (
         <div className="border-t border-gray-100">
 
-          {/* ===== MÜŞTERİ & TESLİMAT BİLGİLERİ ===== */}
+          {/* ===== MÜŞTERİ BİLGİ KUTUCUĞU + DİĞER BİLGİLER ===== */}
           <div className="p-5 bg-gray-50/50">
-            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <User className="w-3.5 h-3.5" />
-              Müşteri & Teslimat Bilgileri
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Ad Soyad */}
-              <div className="bg-white rounded-xl p-3 border border-gray-100">
-                <p className="text-[10px] text-gray-400 font-medium uppercase mb-1 flex items-center gap-1">
-                  <User className="w-2.5 h-2.5" /> Ad Soyad
-                </p>
-                <p className="text-sm font-bold text-gray-800">{customerName}</p>
-              </div>
-              {/* Telefon */}
-              <div className="bg-white rounded-xl p-3 border border-gray-100">
-                <p className="text-[10px] text-gray-400 font-medium uppercase mb-1 flex items-center gap-1">
-                  <Phone className="w-2.5 h-2.5" /> Telefon
-                </p>
-                <p className="text-sm font-bold text-gray-800">
-                  {order.customerInfo?.phone || 'Belirtilmemiş'}
-                </p>
-              </div>
-              {/* Email */}
-              <div className="bg-white rounded-xl p-3 border border-gray-100">
-                <p className="text-[10px] text-gray-400 font-medium uppercase mb-1 flex items-center gap-1">
-                  <Mail className="w-2.5 h-2.5" /> E-posta
-                </p>
-                <p className="text-sm font-bold text-gray-800 truncate">
-                  {order.customerInfo?.email || 'Belirtilmemiş'}
-                </p>
-              </div>
-              {/* Şehir / İlçe */}
-              <div className="bg-white rounded-xl p-3 border border-gray-100">
-                <p className="text-[10px] text-gray-400 font-medium uppercase mb-1 flex items-center gap-1">
-                  <MapPin className="w-2.5 h-2.5" /> Şehir / İlçe
-                </p>
-                <p className="text-sm font-bold text-gray-800">
-                  {[order.customerInfo?.city, order.customerInfo?.district].filter(Boolean).join(' / ') || 'Belirtilmemiş'}
-                </p>
-              </div>
-            </div>
+            <div className="flex flex-col lg:flex-row gap-4">
+              
+              {/* SOL: Diğer detay bilgileri */}
+              <div className="flex-1">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <User className="w-3.5 h-3.5" />
+                  Müşteri & Teslimat Bilgileri
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Email */}
+                  <div className="bg-white rounded-xl p-3 border border-gray-100">
+                    <p className="text-[10px] text-gray-400 font-medium uppercase mb-1 flex items-center gap-1">
+                      <Mail className="w-2.5 h-2.5" /> E-posta
+                    </p>
+                    <p className="text-sm font-bold text-gray-800 truncate">
+                      {order.customerInfo?.email || 'Belirtilmemiş'}
+                    </p>
+                  </div>
+                  {/* Kargo Firması */}
+                  <div className="bg-white rounded-xl p-3 border border-gray-100">
+                    <p className="text-[10px] text-gray-400 font-medium uppercase mb-1 flex items-center gap-1">
+                      <Truck className="w-2.5 h-2.5" /> Kargo Firması
+                    </p>
+                    <p className="text-sm font-bold text-gray-800">{order.shippingCompany || 'Sürat Kargo'}</p>
+                  </div>
+                </div>
 
-            {/* Tam Adres */}
-            <div className="mt-3 bg-white rounded-xl p-3 border border-gray-100">
-              <p className="text-[10px] text-gray-400 font-medium uppercase mb-1 flex items-center gap-1">
-                <MapPin className="w-2.5 h-2.5" /> Teslimat Adresi
-              </p>
-              <p className="text-sm font-semibold text-gray-700 leading-relaxed">{fullAddress}</p>
-            </div>
-
-            {/* Sipariş Notu */}
-            {order.customerInfo?.orderNote && (
-              <div className="mt-3 bg-amber-50 rounded-xl p-3 border border-amber-100">
-                <p className="text-[10px] text-amber-600 font-medium uppercase mb-1 flex items-center gap-1">
-                  <MessageSquare className="w-2.5 h-2.5" /> Sipariş Notu
-                </p>
-                <p className="text-sm font-semibold text-amber-800">{order.customerInfo.orderNote}</p>
+                {/* Sipariş Notu */}
+                {order.customerInfo?.orderNote && (
+                  <div className="mt-3 bg-amber-50 rounded-xl p-3 border border-amber-100">
+                    <p className="text-[10px] text-amber-600 font-medium uppercase mb-1 flex items-center gap-1">
+                      <MessageSquare className="w-2.5 h-2.5" /> Sipariş Notu
+                    </p>
+                    <p className="text-sm font-semibold text-amber-800">{order.customerInfo.orderNote}</p>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* SAĞ: Müşteri Bilgi Kutucuğu */}
+              <div className="lg:w-[300px] flex-shrink-0">
+                <div className="bg-white rounded-2xl border-2 border-gray-900 p-5 shadow-lg shadow-gray-200/50 h-full">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                    <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <h5 className="text-sm font-black text-gray-900 uppercase tracking-wide">Müşteri Bilgileri</h5>
+                  </div>
+                  <div className="space-y-3">
+                    {/* İsim Soyisim */}
+                    <div>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">İSİM SOYİSİM</p>
+                      <p className="text-sm font-bold text-gray-900">{customerName}</p>
+                    </div>
+                    {/* Telefon */}
+                    <div>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">TELEFON</p>
+                      <p className="text-sm font-bold text-gray-900">{order.customerInfo?.phone || 'Belirtilmemiş'}</p>
+                    </div>
+                    {/* Açık Adres */}
+                    <div>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">AÇIK ADRES</p>
+                      <p className="text-sm font-semibold text-gray-800 leading-relaxed">
+                        {[order.customerInfo?.neighborhood, order.customerInfo?.addressDetail].filter(Boolean).join(', ') || 'Belirtilmemiş'}
+                      </p>
+                    </div>
+                    {/* Şehir / İlçe */}
+                    <div>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">ŞEHİR / İLÇE</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {[order.customerInfo?.city, order.customerInfo?.district].filter(Boolean).join(' / ') || 'Belirtilmemiş'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
 
           {/* ===== ÖDEME & KARGO BİLGİLERİ ===== */}
