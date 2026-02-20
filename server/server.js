@@ -2,6 +2,17 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+// Yakalanmamış hataları logla
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.message);
+  console.error(err.stack);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION:', err.message);
+  console.error(err.stack);
+});
+
 // .env dosyasını yükle (lokal geliştirme için)
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -20,7 +31,7 @@ connectDB();
 // CORS - tüm originlere izin ver
 app.use(cors());
 
-// Manuel CORS header - her response'a ekle
+// Manuel CORS header - yedek
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
@@ -39,7 +50,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ message: 'API çalışıyor', status: 'ok' });
+  res.json({ message: 'API calisiyor', status: 'ok', port: process.env.PORT });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
 });
 
 // API Routes
@@ -52,6 +67,6 @@ app.use('/api/stats', require('./routes/statsRoutes'));
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server ${PORT} portunda çalışıyor`);
+  console.log(`Server ${PORT} portunda calisiyor`);
   console.log(`NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
 });
