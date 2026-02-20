@@ -2,71 +2,79 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-// Yakalanmamış hataları logla
+// Hata yakalama
 process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT EXCEPTION:', err.message);
-  console.error(err.stack);
+  console.error('UNCAUGHT:', err.message, err.stack);
 });
-
 process.on('unhandledRejection', (err) => {
-  console.error('UNHANDLED REJECTION:', err.message);
-  console.error(err.stack);
+  console.error('UNHANDLED:', err);
 });
 
-// .env dosyasını yükle (lokal geliştirme için)
+// .env yükle
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-// MongoDB URI kontrolü
-if (!process.env.MONGODB_URI) {
-  console.error('HATA: MONGODB_URI tanımlı değil!');
-  process.exit(1);
-}
-
-const connectDB = require('./config/db');
 const app = express();
+const PORT = parseInt(process.env.PORT) || 5000;
 
-// MongoDB Connection
-connectDB();
-
-// CORS - tüm originlere izin ver
+// CORS
 app.use(cors());
-
-// Manuel CORS header - yedek
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
 
+// Body parser
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Statik dosya sunumu
+// Request logger
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// Health endpoints
+app.get('/', (req, res) => {
+  res.status(200).json({ message: 'API calisiyor', port: PORT });
+});
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// MongoDB bağlantısı
+let dbConnected = false;
+const connectDB = require('./config/db');
+connectDB().then(() => {
+  dbConnected = true;
+  console.log('DB connected flag: true');
+}).catch(err => {
+  console.error('DB connection failed:', err.message);
+});
+
+// Statik dosyalar
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Health check
-app.get('/', (req, res) => {
-  res.json({ message: 'API calisiyor', status: 'ok', port: process.env.PORT });
-});
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-
 // API Routes
-app.use('/api/upload', require('./routes/uploadRoutes'));
-app.use('/api/products', require('./routes/productRoutes'));
-app.use('/api/orders', require('./routes/orderRoutes'));
-app.use('/api/brands', require('./routes/brandRoutes'));
-app.use('/api/stats', require('./routes/statsRoutes'));
+try {
+  app.use('/api/upload', require('./routes/uploadRoutes'));
+  app.use('/api/products', require('./routes/productRoutes'));
+  app.use('/api/orders', require('./routes/orderRoutes'));
+  app.use('/api/brands', require('./routes/brandRoutes'));
+  app.use('/api/stats', require('./routes/statsRoutes'));
+  console.log('All routes loaded successfully');
+} catch (err) {
+  console.error('ROUTE LOAD ERROR:', err.message, err.stack);
+}
 
-const PORT = process.env.PORT || 5000;
+// Server başlat
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`=== SERVER STARTED ON PORT ${PORT} ===`);
+  console.log(`Listening on 0.0.0.0:${PORT}`);
+});
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server ${PORT} portunda calisiyor`);
-  console.log(`NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+server.on('error', (err) => {
+  console.error('SERVER ERROR:', err.message);
 });
