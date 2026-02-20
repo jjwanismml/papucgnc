@@ -1,27 +1,10 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const cloudinary = require('../config/cloudinary');
 const router = express.Router();
 
-// Uploads klasörünü oluştur
-const uploadsDir = path.join(__dirname, '..', 'uploads', 'products');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Multer storage ayarları
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    // Benzersiz dosya adı: timestamp-random-originalname
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, uniqueSuffix + ext);
-  }
-});
+// Multer - memory storage (dosyayı RAM'de tutar, diske yazmaz)
+const storage = multer.memoryStorage();
 
 // Dosya filtresi - sadece resimler
 const fileFilter = (req, file, cb) => {
@@ -41,14 +24,40 @@ const upload = multer({
   }
 });
 
-// POST /api/upload - Birden fazla resim yükleme
-router.post('/', upload.array('images', 20), (req, res) => {
+// Buffer'ı Cloudinary'ye yükle
+const uploadToCloudinary = (fileBuffer, folder) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: folder,
+        resource_type: 'image',
+        transformation: [
+          { quality: 'auto', fetch_format: 'auto' } // Otomatik optimizasyon
+        ]
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+    stream.end(fileBuffer);
+  });
+};
+
+// POST /api/upload - Birden fazla resim yükleme (Cloudinary)
+router.post('/', upload.array('images', 20), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'Lütfen en az bir resim yükleyin' });
     }
 
-    const urls = req.files.map(file => `/uploads/products/${file.filename}`);
+    // Tüm dosyaları paralel olarak Cloudinary'ye yükle
+    const uploadPromises = req.files.map(file => 
+      uploadToCloudinary(file.buffer, 'papucgnc/products')
+    );
+
+    const results = await Promise.all(uploadPromises);
+    const urls = results.map(result => result.secure_url);
 
     res.json({
       message: `${req.files.length} resim başarıyla yüklendi`,
@@ -56,7 +65,7 @@ router.post('/', upload.array('images', 20), (req, res) => {
     });
   } catch (error) {
     console.error('Upload hatası:', error);
-    res.status(500).json({ error: 'Dosya yüklenirken bir hata oluştu' });
+    res.status(500).json({ error: 'Dosya yüklenirken bir hata oluştu: ' + error.message });
   }
 });
 
@@ -78,5 +87,3 @@ router.use((err, req, res, next) => {
 });
 
 module.exports = router;
-
-
