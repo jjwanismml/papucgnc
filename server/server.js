@@ -2,13 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-// .env dosyasını yükle
+// .env dosyasını yükle (lokal geliştirme için)
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-// .env kontrolü
+// MongoDB URI kontrolü
 if (!process.env.MONGODB_URI) {
-  console.error('❌ HATA: .env dosyası bulunamadı veya MONGODB_URI tanımlı değil!');
-  console.error('📁 Beklenen konum:', path.join(__dirname, '.env'));
+  console.error('❌ HATA: MONGODB_URI tanımlı değil!');
+  console.error('📁 Lokal: .env dosyasını kontrol edin');
+  console.error('☁️  Railway: Environment Variables bölümünden MONGODB_URI ekleyin');
   process.exit(1);
 }
 
@@ -19,9 +20,13 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Statik dosya sunumu - yüklenen resimler
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -40,7 +45,7 @@ app.use('/api/stats', require('./routes/statsRoutes'));
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server ${PORT} portunda çalışıyor`);
 });
 
