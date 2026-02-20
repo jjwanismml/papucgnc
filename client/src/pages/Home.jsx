@@ -138,6 +138,7 @@ const ProductCard = ({ product, colorIndex = 0, onCartAdded }) => {
       selectedSize: selectedCardSize,
       quantity: 1,
       price: displayPrice,
+      originalPrice: strikethroughPrice || displayPrice,
       image: mainImage
     });
 

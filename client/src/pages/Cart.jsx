@@ -40,10 +40,25 @@ const Cart = () => {
     // Çift indirim uygulanır
     const pairTotal = pairs * 899;
 
+    // Tüm ürünlerin çizili fiyatlarını (originalPrice) topla
+    const allOriginalPrices = [];
+    cart.forEach(item => {
+      for (let i = 0; i < item.quantity; i++) {
+        allOriginalPrices.push(item.originalPrice || item.price);
+      }
+    });
+    // Çizili fiyatlara göre büyükten küçüğe sırala (en pahalılar çifte girer)
+    allOriginalPrices.sort((a, b) => b - a);
+
+    // Çiftlerdeki ürünlerin çizili fiyat toplamı (en pahalı olanlar çiftte)
+    const pairOriginalPriceTotal = allOriginalPrices.slice(0, pairs * 2).reduce((sum, p) => sum + p, 0);
+
+    // Tasarruf = Çiftlerdeki çizili fiyat toplamı - (çift sayısı × 899)
+    const discount = pairOriginalPriceTotal - pairTotal;
+
     // Kalan tek ürün varsa, en ucuz ürünün fiyatını al
     let remainingPrice = 0;
     if (remaining > 0) {
-      // Tüm ürünleri fiyata göre sırala, en ucuzu tek kalır
       const allPrices = [];
       cart.forEach(item => {
         for (let i = 0; i < item.quantity; i++) {
@@ -55,7 +70,6 @@ const Cart = () => {
     }
 
     const discountedTotal = pairTotal + remainingPrice;
-    const discount = originalTotal - discountedTotal;
 
     return {
       originalTotal,

@@ -98,6 +98,7 @@ const ProductDetail = () => {
       selectedSize: selectedSize,
       quantity: quantity,
       price: displayPrice,
+      originalPrice: strikethroughPrice || displayPrice,
       image: images[0] || '',
     });
 
