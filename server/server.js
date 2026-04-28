@@ -47,11 +47,19 @@ app.get('/health', (req, res) => {
 // MongoDB bağlantısı
 let dbConnected = false;
 const connectDB = require('./config/db');
+
+// Lokal geliştirme modu kontrolü
+const isLocalDev = process.env.NODE_ENV === 'development' || process.env.LOCAL_DEV === 'true';
+if (isLocalDev) {
+  console.log('🛠️ Lokal geliştirme modu aktif');
+}
+
 connectDB().then(() => {
   dbConnected = true;
   console.log('DB connected flag: true');
 }).catch(err => {
   console.error('DB connection failed:', err.message);
+  // Hata zaten db.js içinde loglandı, burada tekrar exit yapma
 });
 
 // Statik dosyalar
@@ -64,6 +72,7 @@ try {
   app.use('/api/orders', require('./routes/orderRoutes'));
   app.use('/api/brands', require('./routes/brandRoutes'));
   app.use('/api/stats', require('./routes/statsRoutes'));
+  app.use('/api/stories', require('./routes/storyRoutes'));
   console.log('All routes loaded successfully');
 } catch (err) {
   console.error('ROUTE LOAD ERROR:', err.message, err.stack);

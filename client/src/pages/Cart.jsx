@@ -11,7 +11,7 @@ const Cart = () => {
   const navigate = useNavigate();
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [selectedShipping, setSelectedShipping] = useState('surat'); // 'surat' veya 'ptt'
+  const [selectedShipping, setSelectedShipping] = useState('aras'); // 'aras' veya 'ptt'
 
   // Toplam ürün adedi
   const totalItemCount = useMemo(() => {
@@ -21,69 +21,56 @@ const Cart = () => {
   // Çift ürün indirimi hesaplama
   const pricingInfo = useMemo(() => {
     const originalTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const pairs = Math.floor(totalItemCount / 2);
-    const remaining = totalItemCount % 2;
+    const pairs = totalItemCount; // her sepet ürünü = 1 çift
 
     if (pairs === 0) {
-      // Tek ürün - normal fiyat
       return {
         originalTotal,
         discountedTotal: originalTotal,
         pairCount: 0,
-        remainingCount: remaining,
-        remainingPrice: originalTotal,
+        pairTotal: 0,
+        bundles: 0,
+        singlePairs: 0,
+        remainingCount: 0,
+        remainingPrice: 0,
         discount: 0,
         hasPairDiscount: false,
       };
     }
 
-    // Çift indirim uygulanır
-    const pairTotal = pairs * 899;
+    // Çift indirim - 1 çift 899₺, 2 çift 1199₺
+    const bundles = Math.floor(pairs / 2);   // 2-çift paketler (1199₺)
+    const singlePairs = pairs % 2;            // tekli çiftler (899₺)
+    const pairTotal = bundles * 1199 + singlePairs * 899;
 
-    // Tüm ürünlerin çizili fiyatlarını (originalPrice) topla
+    // Çizili fiyat toplamı (tasarruf hesabı için)
     const allOriginalPrices = [];
     cart.forEach(item => {
       for (let i = 0; i < item.quantity; i++) {
         allOriginalPrices.push(item.originalPrice || item.price);
       }
     });
-    // Çizili fiyatlara göre büyükten küçüğe sırala (en pahalılar çifte girer)
-    allOriginalPrices.sort((a, b) => b - a);
-
-    // Çiftlerdeki ürünlerin çizili fiyat toplamı (en pahalı olanlar çiftte)
-    const pairOriginalPriceTotal = allOriginalPrices.slice(0, pairs * 2).reduce((sum, p) => sum + p, 0);
-
-    // Tasarruf = Çiftlerdeki çizili fiyat toplamı - (çift sayısı × 899)
+    const pairOriginalPriceTotal = allOriginalPrices.reduce((sum, p) => sum + p, 0);
     const discount = pairOriginalPriceTotal - pairTotal;
 
-    // Kalan tek ürün varsa, en ucuz ürünün fiyatını al
-    let remainingPrice = 0;
-    if (remaining > 0) {
-      const allPrices = [];
-      cart.forEach(item => {
-        for (let i = 0; i < item.quantity; i++) {
-          allPrices.push(item.price);
-        }
-      });
-      allPrices.sort((a, b) => a - b);
-      remainingPrice = allPrices[0]; // En ucuz ürün tek kalır
-    }
-
-    const discountedTotal = pairTotal + remainingPrice;
+    const discountedTotal = pairTotal;
 
     return {
       originalTotal,
       discountedTotal,
       pairCount: pairs,
-      remainingCount: remaining,
-      remainingPrice,
+      pairTotal,
+      bundles,
+      singlePairs,
+      remainingCount: 0,
+      remainingPrice: 0,
       discount,
       hasPairDiscount: true,
     };
   }, [cart, totalItemCount]);
 
   // Kargo ücreti
-  const shippingCost = selectedShipping === 'surat' ? 100 : 150;
+  const shippingCost = selectedShipping === 'aras' ? 100 : 200;
 
   // Toplam
   const total = pricingInfo.discountedTotal + shippingCost;
@@ -159,14 +146,14 @@ const Cart = () => {
           </div>
 
           {/* Çift ürün kampanya banner */}
-          {totalItemCount < 2 && (
+          {pricingInfo.pairCount < 2 && (
             <div className="mb-6 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl p-4 flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <Percent className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-bold text-sm">2. ÇİFTTE DEV İNDİRİM!</p>
-                <p className="text-xs text-white/90">1 ürün daha ekle, 2 ürün sadece <strong>899 ₺</strong> olsun!</p>
+                <p className="font-bold text-sm">2 ÇİFTE ÖZEL FİYAT!</p>
+                <p className="text-xs text-white/90">2 çift al, sadece <strong>1.199 ₺</strong> öde!</p>
               </div>
             </div>
           )}
@@ -179,7 +166,7 @@ const Cart = () => {
               <div>
                 <p className="font-bold text-sm">🎉 ÇİFT İNDİRİMİ UYGULANDI!</p>
                 <p className="text-xs text-white/90">
-                  {pricingInfo.pairCount} çift × 899 ₺ = {(pricingInfo.pairCount * 899).toLocaleString('tr-TR')} ₺
+                  {pricingInfo.pairCount} çift = {pricingInfo.pairTotal.toLocaleString('tr-TR')} ₺
                   {pricingInfo.remainingCount > 0 && ` + 1 ürün ${pricingInfo.remainingPrice.toLocaleString('tr-TR')} ₺`}
                   {' '}— Toplam <strong>{pricingInfo.discount.toLocaleString('tr-TR')} ₺ tasarruf</strong> ettiniz!
                 </p>
@@ -266,25 +253,25 @@ const Cart = () => {
                   <Truck className="w-5 h-5" /> Kargo Seçenekleri
                 </h3>
                 <div className="space-y-3">
-                  {/* Sürat Kargo */}
+                  {/* Aras Kargo */}
                   <label
-                    onClick={() => setSelectedShipping('surat')}
+                    onClick={() => setSelectedShipping('aras')}
                     className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      selectedShipping === 'surat' 
+                      selectedShipping === 'aras' 
                         ? 'border-black bg-gray-50 shadow-sm' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                      selectedShipping === 'surat' ? 'border-black' : 'border-gray-300'
+                      selectedShipping === 'aras' ? 'border-black' : 'border-gray-300'
                     }`}>
-                      {selectedShipping === 'surat' && <div className="w-2.5 h-2.5 rounded-full bg-black" />}
+                      {selectedShipping === 'aras' && <div className="w-2.5 h-2.5 rounded-full bg-black" />}
                     </div>
-                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Truck className="w-5 h-5 text-orange-600" />
+                    <div className="w-16 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                      <img src="https://image.hurimg.com/i/hurriyet/90/750x422/5e1c4e1f7af50714c889242e.jpg" alt="Aras Kargo" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-bold text-sm text-gray-800">Sürat Kargo</p>
+                      <p className="font-bold text-sm text-gray-800">Aras Kargo</p>
                       <p className="text-xs text-gray-500">2-3 iş günü içinde teslimat</p>
                     </div>
                     <span className="font-bold text-sm text-gray-800">₺100</span>
@@ -304,14 +291,14 @@ const Cart = () => {
                     }`}>
                       {selectedShipping === 'ptt' && <div className="w-2.5 h-2.5 rounded-full bg-black" />}
                     </div>
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="w-5 h-5 text-blue-600" />
+                    <div className="w-16 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                      <img src="https://kredilikargo.com.tr/wp-content/uploads/2024/06/ptt-kargo.webp" alt="PTT Kargo" className="w-full h-full object-contain" />
                     </div>
                     <div className="flex-1">
                       <p className="font-bold text-sm text-gray-800">PTT Kargo</p>
                       <p className="text-xs text-gray-500">3-5 iş günü içinde teslimat</p>
                     </div>
-                    <span className="font-bold text-sm text-gray-800">₺150</span>
+                    <span className="font-bold text-sm text-gray-800">₺200</span>
                   </label>
                 </div>
               </div>
@@ -335,8 +322,8 @@ const Cart = () => {
                     <>
                       <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-1.5">
                         <div className="flex justify-between text-green-700 text-xs font-semibold">
-                          <span>🎯 {pricingInfo.pairCount} Çift × 899 ₺</span>
-                          <span>₺{(pricingInfo.pairCount * 899).toLocaleString('tr-TR')}</span>
+                          <span>🎯 {pricingInfo.pairCount} Çift İndirimi</span>
+                          <span>₺{pricingInfo.pairTotal.toLocaleString('tr-TR')}</span>
                         </div>
                         {pricingInfo.remainingCount > 0 && (
                           <div className="flex justify-between text-gray-600 text-xs">
@@ -357,7 +344,7 @@ const Cart = () => {
                   )}
 
                   <div className="flex justify-between text-gray-600">
-                    <span>Kargo ({selectedShipping === 'surat' ? 'Sürat' : 'PTT'})</span>
+                    <span>Kargo ({selectedShipping === 'aras' ? 'Aras' : 'PTT'})</span>
                     <span className="font-bold text-black">₺{shippingCost.toFixed(2)}</span>
                   </div>
 

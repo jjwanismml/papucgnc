@@ -11,6 +11,9 @@ router.get('/', productController.getProducts);
 // GET /api/products/:id - Tekil ürün detayı
 router.get('/:id', productController.getProductById);
 
+// PUT /api/products/bulk-price - Toplu fiyat güncelleme (/:id'den önce olmalı)
+router.put('/bulk-price', productController.bulkUpdatePrices);
+
 // PUT /api/products/:id/feature - Ürünü öne çıkar/çıkarma toggle
 router.put('/:id/feature', productController.toggleFeature);
 

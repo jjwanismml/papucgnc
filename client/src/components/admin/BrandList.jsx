@@ -20,6 +20,9 @@ const brandLogos = {
   'NewBalance': '/new-balance.webp',
   'Converse': '/converse.webp',
   'converse': '/converse.webp',
+  'Dubai Yıldızı': '/dubai-yildizi.webp',
+  'dubai yıldızı': '/dubai-yildizi.webp',
+  'DubaiYıldızı': '/dubai-yildizi.webp',
 };
 
 const getBrandLogo = (brandName) => {

@@ -25,16 +25,17 @@ const upload = multer({
 });
 
 // Buffer'ı Cloudinary'ye yükle
-const uploadToCloudinary = (fileBuffer, folder) => {
+const uploadToCloudinary = (fileBuffer, folder, resourceType = 'image') => {
   return new Promise((resolve, reject) => {
+    const options = {
+      folder: folder,
+      resource_type: resourceType,
+    };
+    if (resourceType === 'image') {
+      options.transformation = [{ quality: 'auto', fetch_format: 'auto' }];
+    }
     const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: folder,
-        resource_type: 'image',
-        transformation: [
-          { quality: 'auto', fetch_format: 'auto' } // Otomatik optimizasyon
-        ]
-      },
+      options,
       (error, result) => {
         if (error) reject(error);
         else resolve(result);
@@ -43,6 +44,43 @@ const uploadToCloudinary = (fileBuffer, folder) => {
     stream.end(fileBuffer);
   });
 };
+
+// Story medya filtresi (resim + video)
+const storyFileFilter = (req, file, cb) => {
+  const allowed = [
+    'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
+    'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska', 'video/ogg'
+  ];
+  if (allowed.includes(file.mimetype)) cb(null, true);
+  else cb(new Error('Desteklenmeyen dosya tipi'), false);
+};
+
+const uploadMedia = multer({
+  storage,
+  fileFilter: storyFileFilter,
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB (video için)
+});
+
+// POST /api/upload/story - Story için tek medya (resim/video) yükleme
+router.post('/story', uploadMedia.single('media'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+    const isVideo = req.file.mimetype.startsWith('video/');
+    const result = await uploadToCloudinary(
+      req.file.buffer,
+      'papucgnc/stories',
+      isVideo ? 'video' : 'image'
+    );
+    res.json({
+      message: 'Yükleme başarılı',
+      url: result.secure_url,
+      mediaType: isVideo ? 'video' : 'image'
+    });
+  } catch (error) {
+    console.error('Story upload hatası:', error);
+    res.status(500).json({ error: 'Yükleme sırasında hata: ' + error.message });
+  }
+});
 
 // POST /api/upload - Birden fazla resim yükleme (Cloudinary)
 router.post('/', upload.array('images', 20), async (req, res) => {

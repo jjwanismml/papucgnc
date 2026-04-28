@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingCart, Home, ChevronRight, Menu, X, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Home, ChevronRight, Menu, X, LogOut, Image } from 'lucide-react';
 import { useState } from 'react';
 
 const AdminLayout = ({ children }) => {
@@ -10,6 +10,7 @@ const AdminLayout = ({ children }) => {
     { path: '/adminjwan', icon: LayoutDashboard, label: 'Dashboard', desc: 'Genel bakış' },
     { path: '/adminjwan/products', icon: Package, label: 'Ürünler', desc: 'Ürün & marka yönetimi' },
     { path: '/adminjwan/orders', icon: ShoppingCart, label: 'Siparişler', desc: 'Sipariş takibi' },
+    { path: '/adminjwan/stories', icon: Image, label: 'Hikayeler', desc: 'Hikaye yönetimi' },
   ];
 
   const isActive = (path) => {
@@ -111,7 +112,7 @@ const AdminLayout = ({ children }) => {
       {/* Main Content */}
       <main className="lg:ml-72 min-h-screen">
         {/* Top Bar */}
-        <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200/80 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200/80 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <button 
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 rounded-xl hover:bg-gray-100 transition-colors"
@@ -134,7 +135,7 @@ const AdminLayout = ({ children }) => {
         </div>
 
         {/* Page Content */}
-        <div className="p-6 lg:p-8">
+        <div className="p-3 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

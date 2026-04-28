@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Truck, Building2, CreditCard, Banknote, Copy, Check, Info, ChevronDown, ChevronUp, Shield, Package, X } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
@@ -27,7 +27,7 @@ const Checkout = () => {
   const { cart, getTotalPrice, clearCart } = useCart();
   
   // Cart'tan gelen kargo seçimi
-  const [selectedShipping, setSelectedShipping] = useState(location.state?.selectedShipping || 'surat');
+  const [selectedShipping, setSelectedShipping] = useState(location.state?.selectedShipping || 'aras');
 
   // Form state
   const [form, setForm] = useState({
@@ -71,10 +71,11 @@ const Checkout = () => {
   // Gönderme durumu
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const orderCompletedRef = useRef(false);
 
-  // Sepet boşsa mağazaya yönlendir
+  // Sepet boşsa mağazaya yönlendir (sipariş tamamlandıysa yönlendirme)
   useEffect(() => {
-    if (cart.length === 0) {
+    if (cart.length === 0 && !orderCompletedRef.current) {
       navigate('/cart');
     }
   }, [cart, navigate]);
@@ -87,43 +88,35 @@ const Checkout = () => {
   // Çift ürün indirimi hesaplama
   const pricingInfo = useMemo(() => {
     const originalTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const pairs = Math.floor(totalItemCount / 2);
-    const remaining = totalItemCount % 2;
+    const pairs = totalItemCount; // her sepet ürünü = 1 çift
 
     if (pairs === 0) {
       return {
         originalTotal,
         discountedTotal: originalTotal,
         pairCount: 0,
-        remainingCount: remaining,
-        remainingPrice: originalTotal,
+        pairTotal: 0,
+        remainingCount: 0,
+        remainingPrice: 0,
         discount: 0,
         hasPairDiscount: false,
       };
     }
 
-    const pairTotal = pairs * 899;
-    let remainingPrice = 0;
-    if (remaining > 0) {
-      const allPrices = [];
-      cart.forEach(item => {
-        for (let i = 0; i < item.quantity; i++) {
-          allPrices.push(item.price);
-        }
-      });
-      allPrices.sort((a, b) => a - b);
-      remainingPrice = allPrices[0];
-    }
+    const bundles = Math.floor(pairs / 2);
+    const singlePairs = pairs % 2;
+    const pairTotal = bundles * 1199 + singlePairs * 899;
 
-    const discountedTotal = pairTotal + remainingPrice;
+    const discountedTotal = pairTotal;
     const discount = originalTotal - discountedTotal;
 
     return {
       originalTotal,
       discountedTotal,
       pairCount: pairs,
-      remainingCount: remaining,
-      remainingPrice,
+      pairTotal,
+      remainingCount: 0,
+      remainingPrice: 0,
       discount,
       hasPairDiscount: true,
     };
@@ -131,7 +124,7 @@ const Checkout = () => {
 
   // Fiyat hesaplama
   const subtotal = pricingInfo.discountedTotal;
-  const shippingCost = selectedShipping === 'surat' ? 100 : 150;
+  const shippingCost = selectedShipping === 'aras' ? 100 : 200;
   const eftSurcharge = paymentMethod === 'havale-eft' ? Math.round(subtotal * 0.05 * 100) / 100 : 0;
   const total = subtotal + shippingCost + eftSurcharge;
 
@@ -232,10 +225,11 @@ const Checkout = () => {
         shippingCost,
         eftSurcharge,
         totalAmount: total,
-        shippingCompany: selectedShipping === 'surat' ? 'Sürat Kargo' : 'PTT Kargo',
+        shippingCompany: selectedShipping === 'aras' ? 'Aras Kargo' : 'PTT Kargo',
       };
 
       const response = await api.post('/orders', orderData);
+      orderCompletedRef.current = true;
       clearCart();
       navigate('/order-success', { state: { order: response.data } });
     } catch (error) {
@@ -257,7 +251,6 @@ const Checkout = () => {
     <div className="min-h-screen bg-gray-50">
       <SEO title="Sipariş Oluştur" description="Siparişinizi tamamlayın." url="/checkout" noindex={true} />
       <Navbar />
-      
       <div className="pt-28 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           
@@ -326,6 +319,7 @@ const Checkout = () => {
                     <input
                       type="tel"
                       placeholder="(5XX) XXX-XXXX"
+                      required
                       value={form.phone}
                       onChange={(e) => handleChange('phone', e.target.value)}
                       className={`w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition-all ${errors.phone ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
@@ -598,19 +592,19 @@ const Checkout = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {/* Sürat Kargo */}
+                  {/* Aras Kargo */}
                   <label
-                    onClick={() => setSelectedShipping('surat')}
-                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedShipping === 'surat' ? 'border-black bg-gray-50 shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
+                    onClick={() => setSelectedShipping('aras')}
+                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedShipping === 'aras' ? 'border-black bg-gray-50 shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedShipping === 'surat' ? 'border-black' : 'border-gray-300'}`}>
-                      {selectedShipping === 'surat' && <div className="w-2.5 h-2.5 rounded-full bg-black" />}
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedShipping === 'aras' ? 'border-black' : 'border-gray-300'}`}>
+                      {selectedShipping === 'aras' && <div className="w-2.5 h-2.5 rounded-full bg-black" />}
                     </div>
-                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Truck className="w-5 h-5 text-orange-600" />
+                    <div className="w-16 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                      <img src="https://image.hurimg.com/i/hurriyet/90/750x422/5e1c4e1f7af50714c889242e.jpg" alt="Aras Kargo" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-bold text-sm text-gray-800">Sürat Kargo</p>
+                      <p className="font-bold text-sm text-gray-800">Aras Kargo</p>
                       <p className="text-xs text-gray-500">2-3 iş günü içinde teslimat</p>
                     </div>
                     <span className="font-bold text-sm text-gray-800">₺100</span>
@@ -624,14 +618,14 @@ const Checkout = () => {
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedShipping === 'ptt' ? 'border-black' : 'border-gray-300'}`}>
                       {selectedShipping === 'ptt' && <div className="w-2.5 h-2.5 rounded-full bg-black" />}
                     </div>
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="w-5 h-5 text-blue-600" />
+                    <div className="w-16 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                      <img src="https://kredilikargo.com.tr/wp-content/uploads/2024/06/ptt-kargo.webp" alt="PTT Kargo" className="w-full h-full object-contain" />
                     </div>
                     <div className="flex-1">
                       <p className="font-bold text-sm text-gray-800">PTT Kargo</p>
                       <p className="text-xs text-gray-500">3-5 iş günü içinde teslimat</p>
                     </div>
-                    <span className="font-bold text-sm text-gray-800">₺150</span>
+                    <span className="font-bold text-sm text-gray-800">₺200</span>
                   </label>
                 </div>
               </div>
@@ -672,8 +666,8 @@ const Checkout = () => {
                     {pricingInfo.hasPairDiscount && (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 space-y-1">
                         <div className="flex justify-between text-green-700 text-xs font-semibold">
-                          <span>🎯 {pricingInfo.pairCount} Çift × 899 ₺</span>
-                          <span>₺{(pricingInfo.pairCount * 899).toLocaleString('tr-TR')}</span>
+                          <span>🎯 {pricingInfo.pairCount} Çift İndirimi</span>
+                          <span>₺{pricingInfo.pairTotal.toLocaleString('tr-TR')}</span>
                         </div>
                         {pricingInfo.remainingCount > 0 && (
                           <div className="flex justify-between text-gray-600 text-xs">
@@ -688,7 +682,7 @@ const Checkout = () => {
                       </div>
                     )}
                     <div className="flex justify-between text-gray-600">
-                      <span>Kargo ({selectedShipping === 'surat' ? 'Sürat' : 'PTT'})</span>
+                      <span>Kargo ({selectedShipping === 'aras' ? 'Aras' : 'PTT'})</span>
                       <span className="font-semibold">₺{shippingCost.toFixed(2)}</span>
                     </div>
                     {eftSurcharge > 0 && (
@@ -771,8 +765,8 @@ const Checkout = () => {
                     {pricingInfo.hasPairDiscount && (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 space-y-1">
                         <div className="flex justify-between text-green-700 text-xs font-semibold">
-                          <span>🎯 {pricingInfo.pairCount} Çift × 899 ₺</span>
-                          <span>₺{(pricingInfo.pairCount * 899).toLocaleString('tr-TR')}</span>
+                          <span>🎯 {pricingInfo.pairCount} Çift İndirimi</span>
+                          <span>₺{pricingInfo.pairTotal.toLocaleString('tr-TR')}</span>
                         </div>
                         {pricingInfo.remainingCount > 0 && (
                           <div className="flex justify-between text-gray-600 text-xs">
@@ -787,7 +781,7 @@ const Checkout = () => {
                       </div>
                     )}
                     <div className="flex justify-between text-gray-600">
-                      <span>Kargo ({selectedShipping === 'surat' ? 'Sürat' : 'PTT'})</span>
+                      <span>Kargo ({selectedShipping === 'aras' ? 'Aras' : 'PTT'})</span>
                       <span className="font-semibold">₺{shippingCost.toFixed(2)}</span>
                     </div>
                     {eftSurcharge > 0 && (

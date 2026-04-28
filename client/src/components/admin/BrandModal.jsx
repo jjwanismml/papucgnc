@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { X, CheckCircle, AlertCircle, Tag } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Tag, Image } from 'lucide-react';
 import api from '../../utils/axios';
 
 const BrandModal = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
+    logoUrl: '',
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -40,7 +41,7 @@ const BrandModal = ({ onClose, onSuccess }) => {
       setErrors({});
       await api.post('/brands', {
         name: formData.name.trim(),
-        logoUrl: '',
+        logoUrl: formData.logoUrl.trim(),
       });
       setSuccess(true);
       setTimeout(() => {
@@ -117,6 +118,36 @@ const BrandModal = ({ onClose, onSuccess }) => {
                 {errors.name}
               </p>
             )}
+          </div>
+
+          {/* Logo URL */}
+          <div className="mb-5">
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              Logo URL <span className="font-normal text-gray-400 normal-case">(isteğe bağlı)</span>
+            </label>
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Image className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="url"
+                  name="logoUrl"
+                  value={formData.logoUrl}
+                  onChange={handleInputChange}
+                  placeholder="https://example.com/logo.png"
+                  className="w-full pl-9 pr-4 py-3 border-2 border-gray-200 focus:border-gray-900 bg-gray-50 focus:bg-white rounded-xl focus:ring-0 outline-none transition-colors text-sm font-medium"
+                />
+              </div>
+              {formData.logoUrl.trim() && (
+                <div className="w-12 h-12 flex-shrink-0 rounded-xl border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center">
+                  <img
+                    src={formData.logoUrl.trim()}
+                    alt="Önizleme"
+                    className="max-w-full max-h-full object-contain p-1"
+                    onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '<span style="font-size:18px">?</span>'; }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Hata Mesajı */}

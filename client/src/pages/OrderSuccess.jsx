@@ -1,8 +1,9 @@
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { CheckCircle, Package, Copy, Check, ArrowRight, Home } from 'lucide-react';
+import { CheckCircle, Package, Copy, Check, ArrowRight, Home, ShoppingBag } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/Layout/Navbar';
 import SEO from '../components/SEO';
+import getImageUrl from '../utils/imageUrl';
 
 const OrderSuccess = () => {
   const location = useLocation();
@@ -163,6 +164,79 @@ const OrderSuccess = () => {
                 <p className="text-sm font-semibold text-amber-600">Beklemede</p>
               </div>
             </div>
+
+            {/* Sipariş Edilen Ürünler */}
+            {order.items && order.items.length > 0 && (
+              <div className={`bg-gray-50 rounded-xl p-5 text-left mb-8 transition-all duration-500 delay-[1000ms] ${
+                showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}>
+                <div className="flex items-center gap-3 mb-4">
+                  <ShoppingBag className="w-5 h-5 text-gray-600" />
+                  <p className="font-bold text-sm text-gray-800">Sipariş Özeti ({order.items.length} ürün)</p>
+                </div>
+                <div className="space-y-3">
+                  {order.items.map((item, index) => (
+                    <div key={index} className="flex items-center gap-3 bg-white rounded-lg p-3 border border-gray-100">
+                      {/* Ürün Görseli */}
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                        {(item.productImage || item.product?.colors?.[0]?.images?.[0]) ? (
+                          <img 
+                            src={getImageUrl(item.productImage || item.product?.colors?.[0]?.images?.[0])} 
+                            alt={item.productName || item.product?.name || 'Ürün'}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-6 h-6 text-gray-300" />
+                          </div>
+                        )}
+                      </div>
+                      {/* Ürün Bilgileri */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">
+                          {item.productName || item.product?.name || 'Ürün'}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-gray-500">Renk: {item.selectedColor}</span>
+                          <span className="text-xs text-gray-300">|</span>
+                          <span className="text-xs text-gray-500">Beden: {item.selectedSize}</span>
+                          <span className="text-xs text-gray-300">|</span>
+                          <span className="text-xs text-gray-500">Adet: {item.quantity}</span>
+                        </div>
+                      </div>
+                      {/* Fiyat */}
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-bold text-gray-900">₺{(item.price * item.quantity).toFixed(2)}</p>
+                        {item.quantity > 1 && (
+                          <p className="text-[10px] text-gray-400">Birim: ₺{item.price?.toFixed(2)}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Fiyat Özeti */}
+                <div className="mt-4 pt-3 border-t border-gray-200 space-y-1">
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Ara Toplam</span>
+                    <span>₺{order.subtotal?.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Kargo ({order.shippingCompany})</span>
+                    <span>₺{order.shippingCost?.toFixed(2)}</span>
+                  </div>
+                  {order.eftSurcharge > 0 && (
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>EFT İndirimi</span>
+                      <span className="text-green-600">-₺{order.eftSurcharge?.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm font-bold text-gray-900 pt-2 border-t border-gray-200">
+                    <span>Toplam</span>
+                    <span>₺{order.totalAmount?.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Havale/EFT Hatırlatma */}
             {order.paymentMethod === 'havale-eft' && (

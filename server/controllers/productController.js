@@ -280,6 +280,25 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
+// PUT /api/products/bulk-price - Tüm ürünlerin fiyatını toplu güncelle
+exports.bulkUpdatePrices = async (req, res) => {
+  try {
+    const { price, originalPrice } = req.body;
+    const updateData = {};
+    if (price !== undefined) updateData.price = parseFloat(price);
+    if (originalPrice !== undefined) updateData.originalPrice = parseFloat(originalPrice);
+
+    const result = await Product.updateMany({}, { $set: updateData });
+    res.json({
+      message: `${result.modifiedCount} ürün güncellendi`,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error('Toplu fiyat güncelleme hatası:', error);
+    res.status(500).json({ error: 'Fiyatlar güncellenirken hata oluştu' });
+  }
+};
+
 // PUT /api/products/:id/feature - Ürünü öne çıkar/çıkarma toggle
 exports.toggleFeature = async (req, res) => {
   try {

@@ -1,5 +1,5 @@
 import { useState, useCallback, lazy, Suspense } from 'react'
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom'
+import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { CartProvider } from './contexts/CartContext'
 import LoadingScreen from './components/LoadingScreen'
 import PageTransition from './components/PageTransition'
@@ -16,6 +16,7 @@ const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'))
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'))
 const Products = lazy(() => import('./pages/admin/Products'))
 const Orders = lazy(() => import('./pages/admin/Orders'))
+const AdminStories = lazy(() => import('./pages/admin/Stories'))
 const AdminLayout = lazy(() => import('./components/Layout/AdminLayout'))
 
 // Lazy loading fallback
@@ -74,6 +75,16 @@ const AppRoutes = () => {
               <ProtectedAdmin>
                 <AdminLayout>
                   <Orders />
+                </AdminLayout>
+              </ProtectedAdmin>
+            }
+          />
+          <Route
+            path="/adminjwan/stories"
+            element={
+              <ProtectedAdmin>
+                <AdminLayout>
+                  <AdminStories />
                 </AdminLayout>
               </ProtectedAdmin>
             }
